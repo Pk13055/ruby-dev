@@ -102,6 +102,45 @@ To save the posts we have to create a model, to store and communicate with data.
 - **To apply all your migrations, you have to run `rake db:migrate`** 
 - Once your migrations are applied and the table is created, you can add the various other methods and calls to the db for CRUD operations.
 
+### Data Validation
+
+- Our data needs to be validated before it can be added to the database.
+- For example, let our title have a minimum length of 5 and it must be compulsory, ie it is a necessary element to be submitted.
+```ruby
+class Post < ActiveRecord::Base
+	validates :title, presence: true, length: { minimum: 5 }
+end
+```
+- So to our controller now, we have to add the following change
+```ruby
+def new
+		@post = Post.new
+	end
+
+	def create
+		# render plain: params[:post].inspect
+		@post = Post.new(post_params)
+		if(@post.save)
+			redirect_to @post
+		else
+			@message = "Post not saved"
+			render 'new'
+		end
+
+		# redirect_to action: "show", params: @post
+	end
+```
+- Now we can render the error message as shown, but instead, the validators will take care of the errors itself, so instead we can add the following to our post new.html.erb:
+```html+ruby
+<div class="row">
+	<% if @post.errors.any? %>
+		<% @post.errors.full_messages.each do |msg| %>
+			<div class="alert alert-danger"><%= msg %></div>
+		<% end %>
+	<% end %>
+</div>
+```
+
 ## Wiring Everything Together
 
 ### Adding record to the Database
@@ -183,3 +222,93 @@ get 'about' => 'pages#about', as: 'about'
 ```html+ruby
 <%= f.text_field( :title, {:class => 'form-control' }) %>
 ```
+
+### Edit Method
+
+To edit a given record, basically, use the same way to find the post as done on the show part, and add an update controller to handle the update
+```ruby
+def edit
+		@post = Post.find(params[:id])
+end
+
+def update
+	@post = Post.find(params[:id])
+	if(@post.update(post_params)) #post_params is passed implicitly
+		redirect_to @post
+	else
+		@message = "Post not saved"
+		render 'edit'
+	end
+
+end
+```
+The only differnce in the case of the form will be the method (_patch instead of post_)
+```html + ruby
+<%= form_for :post, url: post_path(@post), method: :patch do |f| %>
+<p>
+			<%= f.label :title %>
+			<%= f.text_field( :title, {:class => 'form-control', :placeholder => @post.title}) %>
+		</p>
+		<p>
+			<%= f.label :body %>
+			<%= f.text_field( :body, { :class => 'form-control', :placeholder => @post.body }) %>
+		</p>
+		<p>
+			<%= f.submit({:class => 'btn btn-info'}) %>
+		</p>
+		<% end %>
+```
+
+### Destroy Method
+
+- To delete the record from the db, we have to create a delete method in the post controller.
+Now, note that the path for the link for this case will not be *delete_post_path*, but rather just post_path(@post).
+It is confusing to remember the implicit variables and verbs, but just run `rake routes` to get a rough idea.
+- In posts_controller.rb
+```ruby
+	def destroy
+		@post = Post.find(params[:id])
+		if(@post.destroy)
+			redirect_to posts_path
+		else
+			@message = "Post not deleted"
+			render 'show'
+		end
+	end
+
+```
+- The show view can be modified to include error handling,
+```html+ruby
+<div class="row">
+	<div class="card">
+		<div class="card-body">
+			<div class="card-title"><%= @post.title %></div>
+			<%= @post.body %>
+		</div>
+	</div>
+</div>	
+<div class="row">
+	<div class="col-md-6">
+		<%= link_to "Edit Post", edit_post_path(@post), { :class => 'btn btn-success' } %>	
+	</div>
+	<div class="col-md-6">
+		<%= link_to "Delete Post", post_path(@post), 
+			method: :delete, 
+			:class => 'btn btn-danger' %>
+	</div>
+</div>
+<div class="row">
+	<% if @post.errors.any? %>
+		<% @post.errors.full_messages.each do |msg| %>
+			<div class="alert alert-danger"><%= msg %></div>
+		<% end %>
+	<% end %>
+</div>
+<div class="row">
+<% if (@message) %>
+	<div class="col-md-6 col-md-offset-3 btn-danger"> <%= @message %> </div>
+<% end %>
+</div>
+
+```
+Note how the link_to is made with a method: :delete. This is because the controller will not be able to route post_path(@post) correctly, due to overloading. We have to specify delete, just as we specified `:patch`.

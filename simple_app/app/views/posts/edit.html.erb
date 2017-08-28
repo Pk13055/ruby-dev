@@ -4,25 +4,26 @@
 	}
 </style>
 <div class="row">
-	<h1> Add Post</h1>
+	<h1> Edit Post</h1>
 </div>
 <div class="row">
 	<div class="col-sm-12 col-md-6 col-md-offset-3">
-		<%= form_for :post, url: posts_path do |f| %>
+		<%= form_for :post, url: post_path(@post), method: :patch do |f| %>
 		<p>
 			<%= f.label :title %>
-			<%= f.text_field( :title, {:class => 'form-control' }) %>
+			<%= f.text_field( :title, {:class => 'form-control', :placeholder => @post.title}) %>
 		</p>
 		<p>
 			<%= f.label :body %>
-			<%= f.text_field( :body, { :class => 'form-control' }) %>
+			<%= f.text_field( :body, { :class => 'form-control', :placeholder => @post.body }) %>
 		</p>
 		<p>
-			<%= f.submit({:class => 'btn btn-primary'}) %>
+			<%= f.submit({:class => 'btn btn-info'}) %>
 		</p>
 		<% end %>
 	</div>
 </div>
+
 <div class="row">
 	<% if @post.errors.any? %>
 		<% @post.errors.full_messages.each do |msg| %>
