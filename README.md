@@ -312,3 +312,26 @@ It is confusing to remember the implicit variables and verbs, but just run `rake
 
 ```
 Note how the link_to is made with a method: :delete. This is because the controller will not be able to route post_path(@post) correctly, due to overloading. We have to specify delete, just as we specified `:patch`.
+
+## Relationship model
+
+- Now that we have our basic app in place, we can add a model that references some other, ie, a _relationship_. Let us link the mode, _comment_ to the existing _post_ model, ie, add a comment functionality.
+`rails g model Comment username:string body:text post:references`
+
+- This creates a model for us:
+```ruby
+class Comment < ActiveRecord::Base
+  belongs_to :post
+end
+```
+-  Now, only a migration is created so we need to apply migration
+`rake db:migrate`
+
+Once the migration has taken place, we can see that the class `Comment` is already linked to Post, but we have to do the same vice-versa.
+- Now it is a many to one relationship, ie a post has _many_ comments. Thus, in our `post.rb`
+```ruby
+class Post < ActiveRecord::Base
+	has_many :comments
+	validates :title, presence: true, length: { minimum: 5, maximum: 30 }
+end
+```
